@@ -10,9 +10,10 @@ import (
 
 var projectName string
 var moduleName string
+var model string
 
-var createCmd = &cobra.Command{
-	Use:   "create",
+var createFiberCmd = &cobra.Command{
+	Use:   "create-fiber",
 	Short: "Create a new Go Fiber project",
 	Long:  `Creates a new Go Fiber project with a basic structure and specified options.`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -46,11 +47,11 @@ var createCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(createCmd)
+	rootCmd.AddCommand(createFiberCmd)
 
-	createCmd.Flags().StringVarP(&projectName, "name", "n", "", "Name of the project (required)")
-	createCmd.Flags().StringVarP(&moduleName, "module", "m", "", "Go module name (e.g., github.com/user/project) (required)")
+	createFiberCmd.Flags().StringVarP(&projectName, "name", "n", "", "Name of the project (required)")
+	createFiberCmd.Flags().StringVarP(&moduleName, "module", "m", "", "Go module name (e.g., github.com/user/project) (required)")
 
-	createCmd.MarkFlagRequired("name")
-	createCmd.MarkFlagRequired("module")
+	createFiberCmd.MarkFlagRequired("name")
+	createFiberCmd.MarkFlagRequired("module")
 }
