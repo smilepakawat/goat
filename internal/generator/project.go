@@ -25,7 +25,7 @@ func GenerateProject(config ProjectConfig) error {
 
 	dirsToCreate := []string{
 		filepath.Join(config.ProjectName, "cmd", "api"),
-	// 	filepath.Join(config.ProjectName, "internal", "handlers"),
+		filepath.Join(config.ProjectName, "internal"),
 	// 	filepath.Join(config.ProjectName, "internal", "config"),
 	// 	filepath.Join(config.ProjectName, "internal", "models"),
 	}
