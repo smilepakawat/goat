@@ -11,12 +11,12 @@ import (
 )
 
 type ProjectConfig struct {
-	ProjectName  string
-	ModuleName   string
+	ProjectName string
+	ModuleName  string
 }
 
 func GenerateProject(config ProjectConfig) error {
-	fmt.Printf("Generating project with config: %+v\n", config)
+	fmt.Printf("Creating project '%s' with module '%s'...\n", config.ProjectName, config.ModuleName)
 
 	if err := os.Mkdir(config.ProjectName, 0755); err != nil {
 		return fmt.Errorf("failed to create project directory %s: %w", config.ProjectName, err)
@@ -26,8 +26,8 @@ func GenerateProject(config ProjectConfig) error {
 	dirsToCreate := []string{
 		filepath.Join(config.ProjectName, "cmd", "api"),
 		filepath.Join(config.ProjectName, "internal"),
-	// 	filepath.Join(config.ProjectName, "internal", "config"),
-	// 	filepath.Join(config.ProjectName, "internal", "models"),
+		// 	filepath.Join(config.ProjectName, "internal", "config"),
+		// 	filepath.Join(config.ProjectName, "internal", "models"),
 	}
 
 	for _, dir := range dirsToCreate {

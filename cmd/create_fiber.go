@@ -19,29 +19,14 @@ var createFiberCmd = &cobra.Command{
 	Long:  `Creates a new Go Fiber project with a basic structure and specified options.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		p := bbt.NewProgram(ui.NewInitModel())
-		finalModel, err := p.Run()
+		bbtModel, err := p.Run()
 		if err != nil {
-			fmt.Printf("Alas, there's been an error: %v", err)
+			fmt.Printf("Error, there's been an error: %v", err)
 			os.Exit(1)
 		}
 
-		m, _ := finalModel.(ui.Model)
-		projectName := m.ProjectInput.Value()
-		moduleName := m.ModuleInput.Value()
-		if projectName == "" {
-			fmt.Println("Error: Project name is required.")
-			os.Exit(1)
-		}
-		if moduleName == "" {
-			fmt.Println("Error: Module name is required.")
-			os.Exit(1)
-		}
-		fmt.Printf("Creating project '%s' with module '%s'...\n", projectName, moduleName)
-
-		config := generator.ProjectConfig{
-			ProjectName: projectName,
-			ModuleName:  moduleName,
-		}
+		model, _ := bbtModel.(ui.Model)
+		config := buildProjectConfig(model)
 
 		err = generator.GenerateProject(config)
 		if err != nil {
@@ -58,4 +43,22 @@ var createFiberCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(createFiberCmd)
+}
+
+func buildProjectConfig(m ui.Model) generator.ProjectConfig {
+	projectName := m.ProjectInput.Value()
+	moduleName := m.ModuleInput.Value()
+	if projectName == "" {
+		fmt.Println("Error: Project name is required.")
+		os.Exit(1)
+	}
+	if moduleName == "" {
+		fmt.Println("Error: Module name is required.")
+		os.Exit(1)
+	}
+
+	return generator.ProjectConfig{
+		ProjectName: projectName,
+		ModuleName:  moduleName,
+	}
 }
