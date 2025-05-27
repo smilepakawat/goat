@@ -99,6 +99,16 @@ func TestProcessTemplate(t *testing.T) {
 		wantErr      bool
 	}{
 		{
+			name:         "success process template",
+			templatePath: "templates/fiber/main.go.tmpl",
+			outputPath:   "testproject/cmd/api/main.go",
+			config: ProjectConfig{
+				ProjectName: "testproject",
+				ModuleName:  "github.com/test/testproject",
+			},
+			wantErr: false,
+		},
+		{
 			name:         "invalid template path",
 			templatePath: "nonexistent.tmpl",
 			outputPath:   filepath.Join(tempDir, "test_output.go"),
@@ -122,9 +132,22 @@ func TestProcessTemplate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Clean up before and after test
+			defer os.RemoveAll(tt.config.ProjectName)
+			os.RemoveAll(tt.config.ProjectName)
+
+			// Mock
+			os.MkdirAll(filepath.Join(tt.config.ProjectName, "cmd", "api"), 0755)
 			err := processTemplate(tt.templatePath, tt.outputPath, tt.config)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("processTemplate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !tt.wantErr {
+				if file, err := os.Stat(filepath.Join(tt.config.ProjectName, "cmd", "api", "main.go")); os.IsNotExist(err) {
+					t.Errorf("Expected file %s was not created", file)
+				}
 			}
 		})
 	}
