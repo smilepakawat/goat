@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	bbt "github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/smilepakawat/goat/internal/generator"
 	"github.com/smilepakawat/goat/internal/ui"
 	"github.com/spf13/cobra"
@@ -18,14 +18,14 @@ var createFiberCmd = &cobra.Command{
 	Short: "Create a new Go Fiber project",
 	Long:  `Creates a new Go Fiber project with a basic structure and specified options.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		p := bbt.NewProgram(ui.NewInitModel())
-		bbtModel, err := p.Run()
+		p := tea.NewProgram(ui.NewInitModel())
+		teaModel, err := p.Run()
 		if err != nil {
 			fmt.Printf("Error, there's been an error: %v", err)
 			os.Exit(1)
 		}
 
-		model, _ := bbtModel.(ui.Model)
+		model, _ := teaModel.(ui.Model)
 		config := buildProjectConfig(model)
 
 		err = generator.GenerateProject(config)

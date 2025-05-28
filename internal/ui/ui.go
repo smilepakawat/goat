@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/textinput"
-	bbt "github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 const (
@@ -35,33 +35,37 @@ func NewInitModel() Model {
 	}
 }
 
-func (m Model) Init() bbt.Cmd {
+func (m Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m Model) Update(msg bbt.Msg) (bbt.Model, bbt.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case bbt.KeyMsg:
+	case tea.KeyMsg:
 		switch m.State {
 		case inputProjectName:
 			switch msg.String() {
+			case "ctrl+c":
+				return m, tea.Quit
 			case "enter":
 				m.State = inputModuleName
 			default:
-				var cmd bbt.Cmd
+				var cmd tea.Cmd
 				m.ProjectInput, cmd = m.ProjectInput.Update(msg)
 				return m, cmd
 			}
-			case inputModuleName:
-            switch msg.String() {
-            case "enter":
-                m.State = done
-                return m, bbt.Quit
-            default:
-                var cmd bbt.Cmd
-                m.ModuleInput, cmd = m.ModuleInput.Update(msg)
-                return m, cmd
-            }
+		case inputModuleName:
+			switch msg.String() {
+			case "ctrl+c":
+				return m, tea.Quit
+			case "enter":
+				m.State = done
+				return m, tea.Quit
+			default:
+				var cmd tea.Cmd
+				m.ModuleInput, cmd = m.ModuleInput.Update(msg)
+				return m, cmd
+			}
 		}
 	}
 	return m, nil
