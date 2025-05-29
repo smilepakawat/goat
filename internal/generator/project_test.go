@@ -50,21 +50,14 @@ func TestGenerateProject(t *testing.T) {
 			}
 
 			if !tt.wantErr {
-				// Verify directory structure
-				expectedDirs := []string{
-					filepath.Join(tt.config.ProjectName, "cmd", "api"),
-					filepath.Join(tt.config.ProjectName, "internal"),
-				}
-
-				for _, dir := range expectedDirs {
-					if _, err := os.Stat(dir); os.IsNotExist(err) {
-						t.Errorf("Expected directory %s was not created", dir)
-					}
+				// Verify directory
+				if _, err := os.Stat(tt.config.ProjectName); os.IsNotExist(err) {
+					t.Errorf("Expected directory %s was not created", tt.config.ProjectName)
 				}
 
 				// Verify files
 				expectedFiles := []string{
-					filepath.Join(tt.config.ProjectName, "cmd", "api", "main.go"),
+					filepath.Join(tt.config.ProjectName, "main.go"),
 					filepath.Join(tt.config.ProjectName, "go.mod"),
 				}
 

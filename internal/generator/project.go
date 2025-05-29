@@ -23,22 +23,8 @@ func GenerateProject(config ProjectConfig) error {
 	}
 	fmt.Printf("Created directory: %s\n", config.ProjectName)
 
-	dirsToCreate := []string{
-		filepath.Join(config.ProjectName, "cmd", "api"),
-		filepath.Join(config.ProjectName, "internal"),
-		// 	filepath.Join(config.ProjectName, "internal", "config"),
-		// 	filepath.Join(config.ProjectName, "internal", "models"),
-	}
-
-	for _, dir := range dirsToCreate {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", dir, err)
-		}
-		fmt.Printf("Created directory: %s\n", dir)
-	}
-
 	templateFiles := map[string]string{
-		"templates/fiber/main.go.tmpl": filepath.Join(config.ProjectName, "cmd", "api", "main.go"),
+		"templates/fiber/main.go.tmpl": filepath.Join(config.ProjectName, "main.go"),
 		"templates/fiber/go.mod.tmpl":  filepath.Join(config.ProjectName, "go.mod"),
 	}
 
@@ -49,6 +35,7 @@ func GenerateProject(config ProjectConfig) error {
 		fmt.Printf("Created file: %s from template %s\n", outputPath, tmplPath)
 	}
 
+	// TODO: retructure
 	fmt.Println("Running 'go mod tidy'...")
 	cmd := exec.Command("go", "mod", "tidy")
 	cmd.Dir = config.ProjectName
