@@ -3,7 +3,6 @@ package generator
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"text/template"
 
@@ -34,15 +33,6 @@ func GenerateProject(config ProjectConfig) error {
 		}
 		fmt.Printf("Created file: %s from template %s\n", outputPath, tmplPath)
 	}
-
-	// TODO: retructure
-	fmt.Println("Running 'go mod tidy'...")
-	cmd := exec.Command("go", "mod", "tidy")
-	cmd.Dir = config.ProjectName
-	if output, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to run 'go mod tidy': %w\nOutput: %s", err, string(output))
-	}
-	fmt.Println("'go mod tidy' completed successfully.")
 
 	return nil
 }

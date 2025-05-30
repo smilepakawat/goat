@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/smilepakawat/goat/internal/generator"
@@ -34,10 +36,12 @@ var createFiberCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Printf("Project '%s' created successfully!\n", projectName)
+		runCmd(config.ProjectName, "go", "mod", "tidy")
+
+		fmt.Printf("Project '%s' created successfully!\n", config.ProjectName)
 		fmt.Printf("Next steps:\n")
-		fmt.Printf("  cd %s\n", projectName)
-		fmt.Printf("  go run cmd/api/main.go\n")
+		fmt.Printf("  cd %s\n", config.ProjectName)
+		fmt.Printf("  go run main.go\n")
 	},
 }
 
@@ -61,4 +65,16 @@ func buildProjectConfig(m ui.Model) generator.ProjectConfig {
 		ProjectName: projectName,
 		ModuleName:  moduleName,
 	}
+}
+
+func runCmd(directory, name string, args ...string) {
+	argsStr := strings.Join(args, " ")
+	fmt.Printf("Running '%s %s'...\n", name, argsStr)
+	cmd := exec.Command(name, args...)
+	cmd.Dir = directory
+	if output, err := cmd.CombinedOutput(); err != nil {
+		fmt.Printf("failed to run '%s %s': %v\nOutput: %s", name, argsStr, err, string(output))
+		os.Exit(1)
+	}
+	fmt.Printf("'%s %s' completed successfully.\n", name, argsStr)
 }
