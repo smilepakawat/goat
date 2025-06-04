@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"text/template"
 
 	"github.com/smilepakawat/goat/pkg"
@@ -12,6 +13,7 @@ import (
 type ProjectConfig struct {
 	ProjectName string
 	ModuleName  string
+	Templates   []string
 }
 
 func GenerateProject(config ProjectConfig) error {
@@ -22,10 +24,7 @@ func GenerateProject(config ProjectConfig) error {
 	}
 	fmt.Printf("Created directory: %s\n", config.ProjectName)
 
-	templateFiles := map[string]string{
-		"templates/fiber/main.go.tmpl": filepath.Join(config.ProjectName, "main.go"),
-		"templates/fiber/go.mod.tmpl":  filepath.Join(config.ProjectName, "go.mod"),
-	}
+	templateFiles := mapTemplates(config.Templates, config.ProjectName)
 
 	for tmplPath, outputPath := range templateFiles {
 		if err := processTemplate(tmplPath, outputPath, config); err != nil {
@@ -37,25 +36,59 @@ func GenerateProject(config ProjectConfig) error {
 	return nil
 }
 
+func mapTemplates(templates []string, projectName string) map[string]string {
+	if len(templates) == 0 {
+		return map[string]string{}
+	}
+
+	res := make(map[string]string)
+	reg := regexp.MustCompile(`([^/]+?)\.tmpl$`)
+	for _, t := range templates {
+		matches := reg.FindStringSubmatch(t)
+		if len(matches) != 0 {
+			res[t] = filepath.Join(projectName, matches[1])
+		}
+	}
+	return res
+}
+
 func processTemplate(templatePath, outputPath string, config ProjectConfig) error {
+	tmpl, err := loadAndParseTemplate(templatePath)
+	if err != nil {
+		return fmt.Errorf("failed to load template %s: %w", templatePath, err)
+	}
+
+	if err := executeTemplateToFile(tmpl, outputPath, config); err != nil {
+		return fmt.Errorf("failed to execute template %s: %w", templatePath, err)
+	}
+
+	return nil
+}
+
+func loadAndParseTemplate(templatePath string) (*template.Template, error) {
 	tmplContent, err := pkg.Templates.ReadFile(templatePath)
 	if err != nil {
-		return fmt.Errorf("failed to read template file %s: %w", templatePath, err)
+		return nil, fmt.Errorf("failed to read template file: %w", err)
 	}
 
 	tmpl, err := template.New(filepath.Base(templatePath)).Parse(string(tmplContent))
 	if err != nil {
-		return fmt.Errorf("failed to parse template %s: %w", templatePath, err)
+		return nil, fmt.Errorf("failed to parse template: %w", err)
 	}
+
+	return tmpl, nil
+}
+
+func executeTemplateToFile(tmpl *template.Template, outputPath string, config ProjectConfig) error {
 
 	outputFile, err := os.Create(outputPath)
 	if err != nil {
-		return fmt.Errorf("failed to create output file %s: %w", outputPath, err)
+		return fmt.Errorf("failed to create output file: %w", err)
 	}
 	defer outputFile.Close()
 
 	if err := tmpl.Execute(outputFile, config); err != nil {
-		return fmt.Errorf("failed to execute template %s: %w", templatePath, err)
+		return fmt.Errorf("failed to execute template: %w", err)
 	}
 
 	return nil

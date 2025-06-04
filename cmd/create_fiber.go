@@ -64,6 +64,10 @@ func buildProjectConfig(m ui.Model) generator.ProjectConfig {
 	return generator.ProjectConfig{
 		ProjectName: projectName,
 		ModuleName:  moduleName,
+		Templates: []string{
+			"templates/fiber/main.go.tmpl",
+			"templates/fiber/go.mod.tmpl",
+		},
 	}
 }
 

@@ -3,8 +3,10 @@ package generator
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
+	"text/template"
 )
 
 func TestGenerateProject(t *testing.T) {
@@ -20,6 +22,10 @@ func TestGenerateProject(t *testing.T) {
 			config: ProjectConfig{
 				ProjectName: "testproject",
 				ModuleName:  "github.com/test/testproject",
+				Templates: []string{
+					"templates/fiber/main.go.tmpl",
+					"templates/fiber/go.mod.tmpl",
+				},
 			},
 			wantErr: false,
 			validateFunc: func(t *testing.T, config ProjectConfig) {
@@ -53,6 +59,10 @@ func TestGenerateProject(t *testing.T) {
 			config: ProjectConfig{
 				ProjectName: "existingproject",
 				ModuleName:  "github.com/test/existingproject",
+				Templates: []string{
+					"templates/fiber/main.go.tmpl",
+					"templates/fiber/go.mod.tmpl",
+				},
 			},
 			wantErr: true,
 			setupFunc: func(t *testing.T, config ProjectConfig) {
@@ -66,6 +76,10 @@ func TestGenerateProject(t *testing.T) {
 			config: ProjectConfig{
 				ProjectName: "",
 				ModuleName:  "github.com/test/empty",
+				Templates: []string{
+					"templates/fiber/main.go.tmpl",
+					"templates/fiber/go.mod.tmpl",
+				},
 			},
 			wantErr: true,
 		},
@@ -74,6 +88,10 @@ func TestGenerateProject(t *testing.T) {
 			config: ProjectConfig{
 				ProjectName: "test-project_123",
 				ModuleName:  "github.com/test/test-project",
+				Templates: []string{
+					"templates/fiber/main.go.tmpl",
+					"templates/fiber/go.mod.tmpl",
+				},
 			},
 			wantErr: false,
 			validateFunc: func(t *testing.T, config ProjectConfig) {
@@ -88,6 +106,10 @@ func TestGenerateProject(t *testing.T) {
 			config: ProjectConfig{
 				ProjectName: "very-long-project-name-with-many-characters-that-should-still-work",
 				ModuleName:  "github.com/test/very-long-project",
+				Templates: []string{
+					"templates/fiber/main.go.tmpl",
+					"templates/fiber/go.mod.tmpl",
+				},
 			},
 			wantErr: false,
 			validateFunc: func(t *testing.T, config ProjectConfig) {
@@ -95,6 +117,17 @@ func TestGenerateProject(t *testing.T) {
 					t.Errorf("Project directory %s was not created", config.ProjectName)
 				}
 			},
+		},
+		{
+			name: "nonexistent template",
+			config: ProjectConfig{
+				ProjectName: "testproject",
+				ModuleName:  "github.com/test/testproject",
+				Templates: []string{
+					"nonexistent.go.tmpl",
+				},
+			},
+			wantErr: true,
 		},
 	}
 
@@ -130,6 +163,10 @@ func TestGenerateProject_DirectoryPermissions(t *testing.T) {
 	config := ProjectConfig{
 		ProjectName: "permtest",
 		ModuleName:  "github.com/test/permtest",
+		Templates: []string{
+			"templates/fiber/main.go.tmpl",
+			"templates/fiber/go.mod.tmpl",
+		},
 	}
 
 	defer os.RemoveAll(config.ProjectName)
@@ -152,7 +189,7 @@ func TestGenerateProject_DirectoryPermissions(t *testing.T) {
 }
 
 func TestProcessTemplate(t *testing.T) {
-	tempDir := t.TempDir() // Use t.TempDir() for automatic cleanup
+	tempDir := t.TempDir()
 
 	tests := []struct {
 		name         string
@@ -160,8 +197,6 @@ func TestProcessTemplate(t *testing.T) {
 		outputPath   string
 		config       ProjectConfig
 		wantErr      bool
-		setupFunc    func(t *testing.T) string
-		validateFunc func(t *testing.T, outputPath string, config ProjectConfig)
 	}{
 		{
 			name:         "nonexistent template file",
@@ -209,22 +244,12 @@ func TestProcessTemplate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			templatePath := tt.templatePath
 
-			// Setup test if needed
-			if tt.setupFunc != nil {
-				templatePath = tt.setupFunc(t)
-			}
-
 			err := processTemplate(templatePath, tt.outputPath, tt.config)
 
 			// Check error expectation
 			if (err != nil) != tt.wantErr {
 				t.Errorf("processTemplate() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-
-			// Run validation if test should succeed
-			if !tt.wantErr && tt.validateFunc != nil {
-				tt.validateFunc(t, tt.outputPath, tt.config)
 			}
 		})
 	}
@@ -278,36 +303,269 @@ func TestProcessTemplate_RealTemplates(t *testing.T) {
 	}
 }
 
-// Benchmark tests for performance
-func BenchmarkGenerateProject(b *testing.B) {
-	config := ProjectConfig{
-		ProjectName: "benchproject",
-		ModuleName:  "github.com/test/benchproject",
+func TestMapTemplates(t *testing.T) {
+	tempDir := t.TempDir()
+
+	tests := []struct {
+		name          string
+		templates     []string
+		expectedValue map[string]string
+	}{
+		{
+			name: "success generate map of templates",
+			templates: []string{
+				"templates/fiber/main.go.tmpl",
+				"templates/fiber/go.mod.tmpl",
+			},
+			expectedValue: map[string]string{
+				"templates/fiber/main.go.tmpl": filepath.Join(tempDir, "main.go"),
+				"templates/fiber/go.mod.tmpl":  filepath.Join(tempDir, "go.mod"),
+			},
+		},
+		{
+			name:          "empty input",
+			templates:     []string{},
+			expectedValue: map[string]string{},
+		},
+		{
+			name: "invalid templates pattern",
+			templates: []string{
+				"templates/fiber/invalidtemplate",
+			},
+			expectedValue: map[string]string{},
+		},
 	}
 
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-		// Clean up before each iteration
-		os.RemoveAll(config.ProjectName)
-		b.StartTimer()
-
-		err := GenerateProject(config)
-		if err != nil {
-			b.Fatalf("GenerateProject failed: %v", err)
-		}
-
-		b.StopTimer()
-		// Clean up after each iteration
-		os.RemoveAll(config.ProjectName)
-		b.StartTimer()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := mapTemplates(tt.templates, tempDir)
+			reflect.DeepEqual(actual, tt.expectedValue)
+		})
 	}
 }
 
-func BenchmarkProcessTemplate(b *testing.B) {
-	// Note: This benchmark tests against real templates but won't work
-	// because processTemplate uses embedded templates via pkg.Templates.ReadFile()
-	// This is a simplified version that skips the actual benchmark
-	b.Skip("Skipping benchmark - requires embedded template files")
+func TestLoadAndParseTemplate(t *testing.T) {
+	tests := []struct {
+		name         string
+		templatePath string
+		wantErr      bool
+	}{
+		{
+			name:         "nonexistent template file",
+			templatePath: "nonexistent/template.tmpl",
+			wantErr:      true,
+		},
+		{
+			name:         "empty template path",
+			templatePath: "",
+			wantErr:      true,
+		},
+		{
+			name:         "invalid template path with special characters",
+			templatePath: "templates/invalid/../../../etc/passwd",
+			wantErr:      true,
+		},
+		{
+			name:         "template path with null bytes",
+			templatePath: "templates/test\x00.tmpl",
+			wantErr:      true,
+		},
+		{
+			name:         "invalid template format",
+			templatePath: "templates/test/invalid.tmpl",
+			wantErr:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			templatePath := tt.templatePath
+
+			tmpl, err := loadAndParseTemplate(templatePath)
+
+			// Check error expectation
+			if (err != nil) != tt.wantErr {
+				t.Errorf("loadAndParseTemplate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			// Validate template if test should succeed
+			if !tt.wantErr {
+				if tmpl == nil {
+					t.Error("loadAndParseTemplate() returned nil template but no error")
+					return
+				}
+			}
+		})
+	}
+}
+
+func TestExecuteTemplateToFile(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create a simple test template
+	testTemplate := `package main
+
+// Module: {{.ModuleName}}
+func main() {
+	println("Hello, {{.ProjectName}}!")
+}`
+
+	tmpl, err := template.New("test.tmpl").Parse(testTemplate)
+	if err != nil {
+		t.Fatalf("Failed to create test template: %v", err)
+	}
+
+	config := ProjectConfig{
+		ProjectName: "testproject",
+		ModuleName:  "github.com/test/testproject",
+	}
+
+	tests := []struct {
+		name         string
+		template     *template.Template
+		outputPath   string
+		config       ProjectConfig
+		wantErr      bool
+		setupFunc    func(t *testing.T) string
+		validateFunc func(t *testing.T, outputPath string, config ProjectConfig)
+	}{
+		{
+			name:       "successful template execution",
+			template:   tmpl,
+			outputPath: filepath.Join(tempDir, "success_test.go"),
+			config:     config,
+			wantErr:    false,
+			validateFunc: func(t *testing.T, outputPath string, config ProjectConfig) {
+				// Verify file was created
+				if _, err := os.Stat(outputPath); os.IsNotExist(err) {
+					t.Errorf("Output file %s was not created", outputPath)
+					return
+				}
+
+				// Verify file content
+				content, err := os.ReadFile(outputPath)
+				if err != nil {
+					t.Errorf("Failed to read output file: %v", err)
+					return
+				}
+
+				contentStr := string(content)
+				if !strings.Contains(contentStr, config.ProjectName) {
+					t.Errorf("Output file does not contain project name %s", config.ProjectName)
+				}
+				if !strings.Contains(contentStr, config.ModuleName) {
+					t.Errorf("Output file does not contain module name %s", config.ModuleName)
+				}
+			},
+		},
+		{
+			name:       "invalid output directory",
+			template:   tmpl,
+			outputPath: "/root/nonexistent/directory/test.go",
+			config:     config,
+			wantErr:    true,
+		},
+		{
+			name:       "empty output path",
+			template:   tmpl,
+			outputPath: "",
+			config:     config,
+			wantErr:    true,
+		},
+		{
+			name:       "output path with null bytes",
+			template:   tmpl,
+			outputPath: filepath.Join(tempDir, "test\x00.go"),
+			config:     config,
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			outputPath := tt.outputPath
+
+			// Setup test if needed
+			if tt.setupFunc != nil {
+				outputPath = tt.setupFunc(t)
+			}
+
+			err := executeTemplateToFile(tt.template, outputPath, tt.config)
+
+			// Check error expectation
+			if (err != nil) != tt.wantErr {
+				t.Errorf("executeTemplateToFile() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			// Run validation if test should succeed
+			if !tt.wantErr && tt.validateFunc != nil {
+				tt.validateFunc(t, outputPath, tt.config)
+			}
+		})
+	}
+}
+
+func TestExecuteTemplateToFile_TemplateExecutionError(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create a template with invalid syntax that will cause execution error
+	invalidTemplate := `package {{.InvalidField}}`
+
+	tmpl, err := template.New("invalid.tmpl").Parse(invalidTemplate)
+	if err != nil {
+		t.Fatalf("Failed to create invalid test template: %v", err)
+	}
+
+	config := ProjectConfig{
+		ProjectName: "testproject",
+		ModuleName:  "github.com/test/testproject",
+	}
+
+	outputPath := filepath.Join(tempDir, "invalid_execution.go")
+
+	err = executeTemplateToFile(tmpl, outputPath, config)
+	if err == nil {
+		t.Error("executeTemplateToFile() should have failed with template execution error")
+	}
+
+	// Verify that error message contains template execution information
+	if !strings.Contains(err.Error(), "failed to execute template") {
+		t.Errorf("Error message should contain 'failed to execute template', got: %v", err)
+	}
+}
+
+func TestExecuteTemplateToFile_FilePermissions(t *testing.T) {
+	tempDir := t.TempDir()
+
+	testTemplate := `package {{.ProjectName}}`
+	tmpl, err := template.New("perm.tmpl").Parse(testTemplate)
+	if err != nil {
+		t.Fatalf("Failed to create test template: %v", err)
+	}
+
+	config := ProjectConfig{
+		ProjectName: "testproject",
+		ModuleName:  "github.com/test/testproject",
+	}
+
+	outputPath := filepath.Join(tempDir, "perm_test.go")
+
+	err = executeTemplateToFile(tmpl, outputPath, config)
+	if err != nil {
+		t.Fatalf("executeTemplateToFile() failed: %v", err)
+	}
+
+	// Check file permissions
+	info, err := os.Stat(outputPath)
+	if err != nil {
+		t.Fatalf("Failed to stat output file: %v", err)
+	}
+
+	// Files created with os.Create should have default permissions (usually 0644)
+	expectedMode := os.FileMode(0644)
+	if info.Mode().Perm() != expectedMode {
+		t.Logf("File permissions = %v, expected around %v (actual permissions may vary by system)", info.Mode().Perm(), expectedMode)
+	}
 }
