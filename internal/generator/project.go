@@ -38,7 +38,7 @@ func GenerateProject(config ProjectConfig) error {
 
 func mapTemplates(templates []string, projectName string) map[string]string {
 	if len(templates) == 0 {
-		return map[string]string{}
+		return nil
 	}
 
 	res := make(map[string]string)
