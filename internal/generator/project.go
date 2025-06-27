@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"text/template"
 
 	"github.com/smilepakawat/goat/pkg"
@@ -14,6 +15,16 @@ type ProjectConfig struct {
 	ProjectName string
 	ModuleName  string
 	Templates   []string
+}
+
+type InvisibleFiles struct {
+	name []string
+}
+
+var invisibleFiles = InvisibleFiles{
+	name: []string{
+		"gitignore",
+	},
 }
 
 func GenerateProject(config ProjectConfig) error {
@@ -37,19 +48,28 @@ func GenerateProject(config ProjectConfig) error {
 }
 
 func mapTemplates(templates []string, projectName string) map[string]string {
-	if len(templates) == 0 {
-		return nil
-	}
-
 	res := make(map[string]string)
 	reg := regexp.MustCompile(`([^/]+?)\.tmpl$`)
 	for _, t := range templates {
 		matches := reg.FindStringSubmatch(t)
 		if len(matches) != 0 {
-			res[t] = filepath.Join(projectName, matches[1])
+			destFile := buildDestinationFile(matches[1])
+			res[t] = filepath.Join(projectName, destFile)
 		}
 	}
 	return res
+}
+
+func buildDestinationFile(name string) string {
+	if isInvisibleFile(name) {
+		return "." + name
+	} else {
+		return name
+	}
+}
+
+func isInvisibleFile(name string) bool {
+	return slices.Contains(invisibleFiles.name, name)
 }
 
 func processTemplate(templatePath, outputPath string, config ProjectConfig) error {

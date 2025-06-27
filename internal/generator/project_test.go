@@ -283,6 +283,12 @@ func TestProcessTemplate_RealTemplates(t *testing.T) {
 			outputPath:   filepath.Join(tempDir, "main.go"),
 			wantErr:      false,
 		},
+		{
+			name:         "process .gitignore template",
+			templatePath: "templates/base/gitignore.tmpl",
+			outputPath:   filepath.Join(tempDir, ".gitignore"),
+			wantErr:      false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -314,12 +320,14 @@ func TestMapTemplates(t *testing.T) {
 		{
 			name: "success generate map of templates",
 			templates: []string{
+				"templates/base/gitignore.tmpl",
 				"templates/fiber/main.go.tmpl",
 				"templates/fiber/go.mod.tmpl",
 			},
 			expectedValue: map[string]string{
-				"templates/fiber/main.go.tmpl": filepath.Join(tempDir, "main.go"),
-				"templates/fiber/go.mod.tmpl":  filepath.Join(tempDir, "go.mod"),
+				"templates/base/gitignore.tmpl": filepath.Join(tempDir, ".gitignore"),
+				"templates/fiber/main.go.tmpl":  filepath.Join(tempDir, "main.go"),
+				"templates/fiber/go.mod.tmpl":   filepath.Join(tempDir, "go.mod"),
 			},
 		},
 		{
@@ -339,7 +347,65 @@ func TestMapTemplates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			actual := mapTemplates(tt.templates, tempDir)
-			reflect.DeepEqual(actual, tt.expectedValue)
+			if !reflect.DeepEqual(actual, tt.expectedValue) {
+				t.Errorf("Value not match\nactual = %s\nexpected = %s", actual, tt.expectedValue)
+			}
+		})
+	}
+}
+
+func TestBuildDestinationFile(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		expectValue string
+	}{
+		{
+			name:        "is in invisible file list",
+			input:       "gitignore",
+			expectValue: ".gitignore",
+		},
+		{
+			name:        "is not in invisible file list",
+			input:       "go.mod",
+			expectValue: "go.mod",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := buildDestinationFile(tt.input)
+			if actual != tt.expectValue {
+				t.Errorf("Value not match\nactual = %s\nexpected = %s", actual, tt.expectValue)
+			}
+		})
+	}
+}
+
+func TestIsInvisibleFile(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		expectValue bool
+	}{
+		{
+			name:        "is in invisible file list",
+			input:       "gitignore",
+			expectValue: true,
+		},
+		{
+			name:        "is not in invisible file list",
+			input:       "go.mod",
+			expectValue: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := isInvisibleFile(tt.input)
+			if actual != tt.expectValue {
+				t.Errorf("Value not match\nactual = %v\nexpected = %v", actual, tt.expectValue)
+			}
 		})
 	}
 }

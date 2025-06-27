@@ -65,6 +65,7 @@ func buildProjectConfig(m ui.Model) generator.ProjectConfig {
 		ProjectName: projectName,
 		ModuleName:  moduleName,
 		Templates: []string{
+			"templates/base/gitignore.tmpl",
 			"templates/fiber/main.go.tmpl",
 			"templates/fiber/go.mod.tmpl",
 		},
