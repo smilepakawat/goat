@@ -57,7 +57,7 @@ Once your project is created:
 
 ```bash
 cd your-project-name
-go run cmd/api/main.go
+go run main.go
 ```
 
 ## Development
@@ -75,7 +75,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the terms of the LICENSE file included in the repository.
-
-## Author
-
-Pakawat (@smilepakawat)
