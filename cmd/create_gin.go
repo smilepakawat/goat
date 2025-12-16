@@ -10,10 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var createFiberCmd = &cobra.Command{
-	Use:   "create-fiber",
-	Short: "Create a new Go Fiber project",
-	Long:  `Creates a new Go Fiber project with a basic structure and specified options.`,
+var createGinCmd = &cobra.Command{
+	Use:   "create-gin",
+	Short: "Create a new Go Gin project",
+	Long:  `Creates a new Go Gin project with a basic structure and specified options.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		p := tea.NewProgram(ui.NewInitModel())
 		teaModel, err := p.Run()
@@ -23,10 +23,10 @@ var createFiberCmd = &cobra.Command{
 		}
 
 		model, _ := teaModel.(ui.Model)
-		templ := []string{
+		templ := []string {
 			"templates/base/gitignore.tmpl",
-			"templates/fiber/main.go.tmpl",
-			"templates/fiber/go.mod.tmpl",
+			"templates/gin/main.go.tmpl",
+			"templates/gin/go.mod.tmpl",
 		}
 		config := generator.BuildProjectConfig(model, templ)
 
@@ -46,5 +46,5 @@ var createFiberCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(createFiberCmd)
+	rootCmd.AddCommand(createGinCmd)
 }

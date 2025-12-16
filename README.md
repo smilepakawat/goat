@@ -41,7 +41,11 @@ go build -o build/goat
 Run the following command and follow the interactive prompts:
 
 ```bash
+# Create a project with fiber framework
 goat create-fiber
+
+# Create a project with gin gonic framework
+goat create-gin
 ```
 
 You will be asked to provide:
