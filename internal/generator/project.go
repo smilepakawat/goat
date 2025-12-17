@@ -27,14 +27,6 @@ var invisibleFiles = InvisibleFiles{
 	},
 }
 
-func BuildProjectConfig(projectName, moduleName string, templates []string) ProjectConfig {
-	return ProjectConfig{
-		ProjectName: projectName,
-		ModuleName:  moduleName,
-		Templates:   templates,
-	}
-}
-
 func (config ProjectConfig) GenerateProject() error {
 	fmt.Printf("Creating project '%s' with module '%s'...\n", config.ProjectName, config.ModuleName)
 
