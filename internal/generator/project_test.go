@@ -142,7 +142,7 @@ func TestGenerateProject(t *testing.T) {
 				tt.setupFunc(t, tt.config)
 			}
 
-			err := GenerateProject(tt.config)
+			err := tt.config.GenerateProject()
 
 			// Check error expectation
 			if (err != nil) != tt.wantErr {
@@ -171,7 +171,7 @@ func TestGenerateProject_DirectoryPermissions(t *testing.T) {
 
 	defer os.RemoveAll(config.ProjectName)
 
-	err := GenerateProject(config)
+	err := config.GenerateProject()
 	if err != nil {
 		t.Fatalf("GenerateProject() error = %v", err)
 	}

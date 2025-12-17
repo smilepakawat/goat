@@ -23,14 +23,28 @@ var createFiberCmd = &cobra.Command{
 		}
 
 		model, _ := teaModel.(ui.Model)
-		templ := []string{
+		projectName := model.ProjectInput.Value()
+		moduleName := model.ModuleInput.Value()
+		if projectName == "" {
+			fmt.Println("Error: Project name is required.")
+			os.Exit(1)
+		}
+		if moduleName == "" {
+			fmt.Println("Error: Module name is required.")
+			os.Exit(1)
+		}
+
+		templates := []string{
 			"templates/base/gitignore.tmpl",
 			"templates/fiber/main.go.tmpl",
 			"templates/fiber/go.mod.tmpl",
 		}
-		config := generator.BuildProjectConfig(model, templ)
-
-		err = generator.GenerateProject(config)
+		config := generator.ProjectConfig{
+			ProjectName: projectName,
+			ModuleName: moduleName,
+			Templates: templates,
+		}
+		err = config.GenerateProject()
 		if err != nil {
 			fmt.Printf("Error generating project: %v\n", err)
 			os.Exit(1)
