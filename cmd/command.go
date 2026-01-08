@@ -17,4 +17,8 @@ func RunCmd(directory, name string, args ...string) {
 		os.Exit(1)
 	}
 	fmt.Printf("'%s %s' completed successfully.\n", name, argsStr)
+	fmt.Printf("Project '%s' created successfully!\n", name)
+	fmt.Printf("Next steps:\n")
+	fmt.Printf("  cd %s\n", name)
+	fmt.Printf("  go run main.go\n")
 }
